@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Variational Autoencoders: From Basics to Advanced Theory</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            border-bottom: 1px solid #2c3e50;
+            padding-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 40px;
+        }
+        h3 {
+            font-size: 1.5em;
+            border-bottom: none;
+        }
+        .math {
+            font-style: italic;
+        }
+        .equation {
+            display: block;
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        .proof {
+            background-color: #fff;
+            border-left: 3px solid #2c3e50;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #toc {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        #toc h2 {
+            margin-top: 0;
+        }
+        #toc ol {
+            padding-left: 20px;
+        }
+        #toc li {
+            margin-bottom: 10px;
+        }
+        a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+</head>
+<body>
+    <h1>Variational Autoencoders: From Basics to Advanced Theory</h1>
+    
+    <div id="toc">
+        <h2>Table of Contents</h2>
+        <ol>
+            <li><a href="#introduction">Introduction to Variational Autoencoders</a></li>
+            <li><a href="#probabilistic-framework">Probabilistic Framework</a></li>
+            <li><a href="#vae-architecture">VAE Architecture</a></li>
+            <li><a href="#elbo">Evidence Lower Bound (ELBO)</a></li>
+            <li><a href="#kl-divergence">Kullback-Leibler Divergence</a></li>
+            <li><a href="#reparameterization">Reparameterization Trick</a></li>
+            <li><a href="#optimization">Optimization and Training</a></li>
+            <li><a href="#advanced-theory">Advanced Theoretical Aspects</a></li>
+            <li><a href="#conclusion">Conclusion and Future Directions</a></li>
+        </ol>
+    </div>
+
+    <h2 id="introduction">Introduction to Variational Autoencoders</h2>
+    <p>
+        Variational Autoencoders (VAEs) are a class of generative models that combine ideas from variational inference and neural networks. Introduced by Kingma and Welling in 2013, VAEs have become a cornerstone in unsupervised learning and generative modeling.
+    </p>
+    <p>
+        At their core, VAEs aim to learn a latent representation of data while simultaneously learning to generate new data from this latent space. This dual nature of VAEs makes them particularly powerful for tasks such as dimensionality reduction, data generation, and anomaly detection.
+    </p>
+
+    <h2 id="probabilistic-framework">Probabilistic Framework</h2>
+    <p>
+        VAEs are rooted in probabilistic modeling. Let \(x\) be an observed variable and \(z\) be a latent variable. The joint distribution \(p(x, z)\) can be factored as:
+    </p>
+    <div class="equation">
+        \[p(x, z) = p(x|z)p(z)\]
+    </div>
+    <p>
+        Where \(p(z)\) is the prior distribution over latent variables, and \(p(x|z)\) is the likelihood of the data given the latent variables. The goal is to infer the posterior distribution \(p(z|x)\), which is often intractable.
+    </p>
+    <p>
+        VAEs introduce an approximate posterior \(q_\phi(z|x)\), parameterized by \(\phi\), to approximate the true posterior. This leads to the variational inference framework.
+    </p>
+
+    <h2 id="vae-architecture">VAE Architecture</h2>
+    <p>
+        A VAE consists of two main components:
+    </p>
+    <ol>
+        <li>Encoder (Recognition Model): \(q_\phi(z|x)\)</li>
+        <li>Decoder (Generative Model): \(p_\theta(x|z)\)</li>
+    </ol>
+    <p>
+        Both the encoder and decoder are typically implemented as neural networks, parameterized by \(\phi\) and \(\theta\) respectively.
+    </p>
+
+    <h2 id="elbo">Evidence Lower Bound (ELBO)</h2>
+    <p>
+        The ELBO is a lower bound on the log-likelihood of the data and serves as the optimization objective for VAEs. It is derived as follows:
+    </p>
+    <div class="proof">
+        \begin{align*}
+        \log p(x) &= \log \int p(x, z) dz \\
+        &= \log \int p(x, z) \frac{q_\phi(z|x)}{q_\phi(z|x)} dz \\
+        &= \log \mathbb{E}_{q_\phi(z|x)} \left[\frac{p(x, z)}{q_\phi(z|x)}\right] \\
+        &\geq \mathbb{E}_{q_\phi(z|x)} \left[\log \frac{p(x, z)}{q_\phi(z|x)}\right] \quad \text{(Jensen's inequality)} \\
+        &= \mathbb{E}_{q_\phi(z|x)} [\log p(x|z)] - \text{KL}(q_\phi(z|x) || p(z)) \\
+        &\equiv \text{ELBO}(x)
+        \end{align*}
+    </div>
+    <p>
+        The ELBO consists of two terms:
+    </p>
+    <ol>
+        <li>The reconstruction term: \(\mathbb{E}_{q_\phi(z|x)} [\log p(x|z)]\)</li>
+        <li>The regularization term: \(-\text{KL}(q_\phi(z|x) || p(z))\)</li>
+    </ol>
+
+    <h2 id="kl-divergence">Kullback-Leibler Divergence</h2>
+    <p>
+        The KL divergence term in the ELBO measures the difference between the approximate posterior and the prior. For VAEs, we typically choose:
+    </p>
+    <ul>
+        <li>\(q_\phi(z|x) = \mathcal{N}(\mu_\phi(x), \sigma_\phi^2(x))\)</li>
+        <li>\(p(z) = \mathcal{N}(0, I)\)</li>
+    </ul>
+    <p>
+        The KL divergence between two multivariate Gaussian distributions has a closed-form solution:
+    </p>
+    <div class="equation">
+        \[
+        \text{KL}(\mathcal{N}(\mu_1, \Sigma_1) || \mathcal{N}(\mu_2, \Sigma_2)) = \frac{1}{2}\left(\text{tr}(\Sigma_2^{-1}\Sigma_1) + (\mu_2 - \mu_1)^T\Sigma_2^{-1}(\mu_2 - \mu_1) - k + \log\frac{|\Sigma_2|}{|\Sigma_1|}\right)
+        \]
+    </div>
+    <p>
+        Where \(k\) is the dimensionality of the distributions.
+    </p>
+
+    <h2 id="reparameterization">Reparameterization Trick</h2>
+    <p>
+        To allow for backpropagation through the sampling process, VAEs employ the reparameterization trick. Instead of directly sampling from \(q_\phi(z|x)\), we sample from a fixed distribution and transform the samples:
+    </p>
+    <div class="equation">
+        \[z = \mu_\phi(x) + \sigma_\phi(x) \odot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)\]
+    </div>
+    <p>
+        This allows the gradients to flow through the \(\mu_\phi(x)\) and \(\sigma_\phi(x)\) networks.
+    </p>
+
+    <h2 id="optimization">Optimization and Training</h2>
+    <p>
+        The VAE is trained by maximizing the ELBO with respect to both the encoder and decoder parameters:
+    </p>
+    <div class="equation">
+        \[\max_{\phi, \theta} \mathbb{E}_{p_\text{data}(x)} [\text{ELBO}(x)]\]
+    </div>
+    <p>
+        This optimization is typically performed using stochastic gradient descent or its variants. The gradients are estimated using Monte Carlo sampling:
+    </p>
+    <div class="equation">
+        \[
+        \nabla_{\phi, \theta} \text{ELBO}(x) \approx \frac{1}{L} \sum_{l=1}^L \nabla_{\phi, \theta} \left[\log p_\theta(x|z^{(l)}) + \log p(z^{(l)}) - \log q_\phi(z^{(l)}|x)\right]
+        \]
+    </div>
+    <p>
+        Where \(z^{(l)} = \mu_\phi(x) + \sigma_\phi(x) \odot \epsilon^{(l)}\), and \(\epsilon^{(l)} \sim \mathcal{N}(0, I)\).
+    </p>
+
+    <h2 id="advanced-theory">Advanced Theoretical Aspects</h2>
+    
+    <h3>Information Theory Perspective</h3>
+    <p>
+        The ELBO can be rewritten in terms of mutual information:
+    </p>
+    <div class="equation">
+        \[
+        \text{ELBO}(x) = \mathbb{E}_{p_\text{data}(x)}[\mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)]] - I_q(x; z) + H(x)
+        \]
+    </div>
+    <p>
+        Where \(I_q(x; z)\) is the mutual information between \(x\) and \(z\) under the joint distribution \(q_\phi(x, z) = p_\text{data}(x)q_\phi(z|x)\), and \(H(x)\) is the entropy of the data distribution.
+    </p>
+
+    <h3>Normalizing Flows</h3>
+    <p>
+        Normalizing flows can be incorporated into VAEs to increase the expressiveness of the approximate posterior. A normalizing flow \(f\) is a series of invertible transformations applied to a simple base distribution:
+    </p>
+    <div class="equation">
+        \[
+        z_K = f_K \circ f_{K-1} \circ ... \circ f_1(z_0), \quad z_0 \sim q_\phi(z_0|x)
+        \]
+    </div>
+    <p>
+        The density of the transformed variable is given by the change of variables formula:
+    </p>
+    <div class="equation">
+        \[
+        \log q_K(z_K) = \log q_0(z_0) - \sum_{k=1}^K \log \left|\det \frac{\partial f_k}{\partial z_{k-1}}\right|
+        \]
+    </div>
+
+    <h3>Tighter Bounds</h3>
+    <p>
+        The IWAE (Importance Weighted Autoencoder) provides a tighter lower bound on the log-likelihood:
+    </p>
+    <div class="equation">
+        \[
+        \log p(x) \geq \mathbb{E}_{z_1,...,z_K \sim q_\phi(z|x)} \left[\log \frac{1}{K} \sum_{k=1}^K \frac{p_\theta(x, z_k)}{q_\phi(z_k|x)}\right] \equiv \mathcal{L}_K
+        \]
+    </div>
+    <p>
+        As \(K \to \infty\), \(\mathcal{L}_K\) converges to \(\log p(x)\).
+    </p>
+
+    <h3>Connections to Other Methods</h3>
+    <p>
+        VAEs have interesting connections to other methods in machine learning and statistics:
+    </p>
+    <ul>
+        <li>EM Algorithm: VAEs can be viewed as a amortized version of the EM algorithm.</li>
+        <li>Gaussian Processes: The infinite-width limit of certain VAE architectures corresponds to Gaussian processes.</li>
+        <li>Optimal Transport: The regularization term in VAEs can be interpreted as an optimal transport problem.</li>
+    </ul>
+
+    <h2 id="conclusion">Conclusion and Future Directions</h2>
+    <p>
+        Variational Autoencoders represent a powerful framework for generative modeling and representation learning. Their combination of probabilistic modeling and deep learning has opened up new avenues for research and applications.
+    </p>
+    <p>
+        Future directions in VAE research include:
+    </p>
+    <ul>
+        <li>Developing more expressive approximate posteriors</li>
+        <li>Improving the quality of generated samples</li>
+        <li>Incorporating structured priors for better inductive biases</li>
+        <li>Exploring connections to causal inference and representation learning</li>
+    </ul>
+    <p>
+        As the field continues to evolve, VAEs remain a cornerstone of modern machine learning, bridging the gap between probabilistic modeling and deep learning.
+    </p>
+</body>
+</html>
